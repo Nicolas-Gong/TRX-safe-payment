@@ -103,32 +103,46 @@ class RiskValidator {
      * 
      * @param transaction 待检查的交易
      * @param config Settings 配置
+     * @param isWhitelisted 收款地址是否在白名单中
      * @return 风控检查结果
      */
     fun checkRisk(
         transaction: Chain.Transaction,
-        config: SettingsConfig
+        config: SettingsConfig,
+        isWhitelisted: Boolean = false
     ): RiskCheckResult {
         
-        // 1. 白名单规则检查（任一不通过直接 BLOCK）
-        val whitelistResult = checkWhitelist(transaction, config)
-        if (whitelistResult.level == RiskLevel.BLOCK) {
-            return whitelistResult
+        // 1. 白名单规则检查（基本协议规则，任一不通过直接 BLOCK）
+        val protocolResult = checkWhitelist(transaction, config)
+        if (protocolResult.level == RiskLevel.BLOCK) {
+            return protocolResult
         }
         
         // 2. 价格风险检查
         val priceRiskResult = checkPriceRisk(config.pricePerUnitSun)
-        if (priceRiskResult.level != RiskLevel.PASS) {
+        if (priceRiskResult.level == RiskLevel.BLOCK) {
             return priceRiskResult
         }
         
-        // 3. 所有检查通过
+        // 3. 业务白名单检查 (Address Book Whitelist)
+        if (!isWhitelisted) {
+            // 如果地址不在白名单，风险等级自动提升至 WARN
+            return RiskCheckResult.warn("风险提示：该地址不在您的白名单地址簿中，请仔细核对！", requiresConfirmation = true)
+        }
+        
+        // 4. 重合检查 (如果价格有警告且不在白名单)
+        if (priceRiskResult.level == RiskLevel.WARN) {
+             return priceRiskResult
+        }
+        
+        // 5. 所有检查通过
         return RiskCheckResult.pass("风控检查通过")
     }
     
     /**
-     * 白名单规则检查
-     * 全部满足才放行，任一不满足则阻止
+     * 基本协议规则检查
+     * 全部满足才通过，任一不满足则阻止 (BLOCK)
+     * 内部使用 TransactionValidator 进行硬性安全约束检查
      * 
      * @param transaction 交易对象
      * @param config Settings 配置
@@ -138,67 +152,20 @@ class RiskValidator {
         transaction: Chain.Transaction,
         config: SettingsConfig
     ): RiskCheckResult {
-        
-        // 规则 1：检查交易基础结构
-        if (!transaction.hasRawData()) {
-            return RiskCheckResult.block("白名单检查失败：交易缺少 RawData")
-        }
-        
-        val rawData = transaction.rawData
-        
-        // 规则 2：仅允许一个合约
-        if (rawData.contractCount != 1) {
-            return RiskCheckResult.block(
-                "白名单检查失败：交易包含 ${rawData.contractCount} 个合约，仅允许 1 个"
+        return try {
+            val validator = com.trxsafe.payment.transaction.TransactionValidator()
+            // 提取 from 地址用于验证
+            val fromAddress = org.tron.trident.utils.Base58Check.bytesToBase58(
+                Contract.TransferContract.parseFrom(
+                    transaction.rawData.getContract(0).parameter.value
+                ).ownerAddress.toByteArray()
             )
-        }
-        
-        val contract = rawData.getContract(0)
-        
-        // 规则 3：交易类型必须是 TransferContract
-        if (contract.type != Chain.Transaction.Contract.ContractType.TransferContract) {
-            return RiskCheckResult.block(
-                "白名单检查失败：交易类型为 ${contract.type}，仅允许 TransferContract"
-            )
-        }
-        
-        // 解析 TransferContract
-        val transferContract = try {
-            Contract.TransferContract.parseFrom(contract.parameter.value)
+            
+            validator.validateTransactionWithConfig(transaction, config, fromAddress)
+            RiskCheckResult.pass("协议白名单检查通过")
         } catch (e: Exception) {
-            return RiskCheckResult.block("白名单检查失败：无法解析 TransferContract")
+            RiskCheckResult.block("协议违规：${e.message}")
         }
-        
-        // 规则 4：token 必须是 TRX（TransferContract 默认就是 TRX）
-        // TRX 转账使用 TransferContract，不会有 token 字段
-        // 这里已经通过交易类型检查确保了是 TRX
-        
-        // 规则 5：data 必须为空
-        // TransferContract 不包含 data 字段，额外检查 RawData
-        if (rawData.hasData() && rawData.data.size() > 0) {
-            return RiskCheckResult.block(
-                "白名单检查失败：交易包含 data 字段（${rawData.data.size()} 字节）"
-            )
-        }
-        
-        // 规则 6：amount 必须大于 0
-        val amount = transferContract.amount
-        if (amount <= 0) {
-            return RiskCheckResult.block(
-                "白名单检查失败：转账金额为 $amount，必须大于 0"
-            )
-        }
-        
-        // 规则 7：amount 必须等于 pricePerUnitSun * multiplier
-        val expectedAmount = config.pricePerUnitSun * config.multiplier
-        if (amount != expectedAmount) {
-            return RiskCheckResult.block(
-                "白名单检查失败：金额不匹配（期望 $expectedAmount sun，实际 $amount sun）"
-            )
-        }
-        
-        // 所有白名单规则通过
-        return RiskCheckResult.pass("白名单检查通过")
     }
     
     /**

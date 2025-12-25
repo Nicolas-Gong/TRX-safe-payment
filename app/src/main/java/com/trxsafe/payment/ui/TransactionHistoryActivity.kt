@@ -29,7 +29,7 @@ import java.util.Locale
 /**
  * 交易历史界面
  */
-class TransactionHistoryActivity : AppCompatActivity() {
+class TransactionHistoryActivity : BaseActivity() {
     
     private lateinit var binding: ActivityTransactionHistoryBinding
     private lateinit var recorder: TransactionRecorder
@@ -44,6 +44,71 @@ class TransactionHistoryActivity : AppCompatActivity() {
         
         initViews()
         loadData()
+        startStatusPolling()
+    }
+    
+    private fun startStatusPolling() {
+        androidx.lifecycle.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            while (kotlinx.coroutines.isActive) {
+                val records = recorder.getAllRecords().filter { it.status == TransactionStatus.PENDING }
+                if (records.isEmpty()) {
+                    // 如果没有待定交易，等一会儿再查，或者直接结束（这里选择等 30 秒再查，如果有的话则 10 秒）
+                    kotlinx.coroutines.delay(30_000)
+                    continue
+                }
+                
+                // 获取当前配置节点
+                val settingsRepo = com.trxsafe.payment.settings.SettingsRepository(this@TransactionHistoryActivity)
+                val config = settingsRepo.loadConfig()
+                
+                // 使用 try-finally 确保 apiWrapper 关闭
+                val apiWrapper = org.tron.trident.core.ApiWrapper(config.nodeUrl)
+                try {
+                    val broadcaster = com.trxsafe.payment.broadcast.TransactionBroadcaster(this@TransactionHistoryActivity, apiWrapper)
+                    
+                    for (record in records) {
+                        try {
+                            val statusInfo = broadcaster.getTransactionStatus(record.txid)
+                            handleStatusUpdate(record, statusInfo)
+                        } catch (e: Exception) {
+                            // 单个任务失败不影响其他
+                        }
+                    }
+                } finally {
+                    apiWrapper.close()
+                }
+                
+                // 刷新列表
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    loadData()
+                }
+                
+                // 每 10 秒轮询一次
+                kotlinx.coroutines.delay(10_000)
+            }
+        }
+    }
+
+    private fun handleStatusUpdate(record: TransactionRecord, info: com.trxsafe.payment.broadcast.TransactionStatusInfo) {
+        when (info) {
+            is com.trxsafe.payment.broadcast.TransactionStatusInfo.Success -> {
+                recorder.updateRecord(record.txid) { 
+                    it.copy(
+                        status = TransactionStatus.SUCCESS,
+                        blockHeight = info.blockHeight,
+                        feeSun = info.feeSun,
+                        netUsage = info.netUsage,
+                        energyUsage = info.energyUsage
+                    )
+                }
+            }
+            is com.trxsafe.payment.broadcast.TransactionStatusInfo.Failed -> {
+                recorder.updateRecord(record.txid) { 
+                    it.copy(status = TransactionStatus.FAILURE, errorMessage = info.reason)
+                }
+            }
+            else -> { /* Keep PENDING or handle error */ }
+        }
     }
     
     private fun initViews() {
@@ -55,14 +120,57 @@ class TransactionHistoryActivity : AppCompatActivity() {
         
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
+
+        binding.chipGroup.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.chipSent -> loadData()
+                R.id.chipReceived -> loadIncomingData()
+            }
+        }
     }
     
     private fun loadData() {
         val records = recorder.getAllRecords()
-        
+        updateList(records)
+    }
+
+    private fun loadIncomingData() {
+        androidx.lifecycle.lifecycleScope.launch {
+            binding.recyclerView.visibility = View.GONE
+            binding.tvEmpty.visibility = View.VISIBLE
+            binding.tvEmpty.text = "正在查询链上记录..."
+            
+            try {
+                val walletManager = com.trxsafe.payment.wallet.WalletManager(this@TransactionHistoryActivity)
+                val address = walletManager.getAddress() ?: return@launch
+                
+                val settingsRepo = com.trxsafe.payment.settings.SettingsRepository(this@TransactionHistoryActivity)
+                val config = settingsRepo.loadConfig()
+                
+                val apiWrapper = org.tron.trident.core.ApiWrapper(config.nodeUrl)
+                try {
+                    val broadcaster = com.trxsafe.payment.broadcast.TransactionBroadcaster(this@TransactionHistoryActivity, apiWrapper)
+                    val incoming = broadcaster.getIncomingTransactions(address)
+                    
+                    if (incoming.isEmpty()) {
+                        binding.tvEmpty.text = "暂无收到转账记录\n(或当前节点不支持此查询)"
+                    } else {
+                        updateList(incoming)
+                    }
+                } finally {
+                    apiWrapper.close()
+                }
+            } catch (e: Exception) {
+                binding.tvEmpty.text = "查询失败：${e.message}"
+            }
+        }
+    }
+
+    private fun updateList(records: List<TransactionRecord>) {
         if (records.isEmpty()) {
             binding.recyclerView.visibility = View.GONE
             binding.tvEmpty.visibility = View.VISIBLE
+            binding.tvEmpty.text = getString(R.string.no_transactions)
         } else {
             binding.recyclerView.visibility = View.VISIBLE
             binding.tvEmpty.visibility = View.GONE
@@ -176,18 +284,27 @@ class TransactionAdapter(
     }
     
     override fun getItemCount() = items.size
-    
     inner class ViewHolder(private val binding: ItemTransactionBinding) : RecyclerView.ViewHolder(binding.root) {
-        
         fun bind(record: TransactionRecord) {
             binding.root.setOnClickListener { onItemClick(record) }
             
+            // 获取当前钱包地址以区分进出账
+            val walletManager = com.trxsafe.payment.wallet.WalletManager(binding.root.context)
+            val myAddress = walletManager.getAddress()
+            val isIncoming = record.toAddress == myAddress && record.fromAddress != myAddress
+            
             // 接收地址
-            binding.tvToAddress.text = record.toAddress
+            binding.tvToAddress.text = if (isIncoming) "来自: ${record.fromAddress}" else "发往: ${record.toAddress}"
             
             // 金额
             val amountTrx = AmountUtils.formatAmount(record.amountSun)
-            binding.tvAmount.text = "- $amountTrx"
+            if (isIncoming) {
+                binding.tvAmount.text = "+ $amountTrx"
+                binding.tvAmount.setTextColor(Color.parseColor("#4CAF50")) // Green
+            } else {
+                binding.tvAmount.text = "- $amountTrx"
+                binding.tvAmount.setTextColor(Color.parseColor("#F44336")) // Red
+            }
             
             // 时间
             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

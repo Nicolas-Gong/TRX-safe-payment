@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 /**
  * 地址簿管理界面
  */
-class AddressBookActivity : AppCompatActivity() {
+class AddressBookActivity : BaseActivity() {
     
     private lateinit var binding: ActivityAddressBookBinding
     private lateinit var repository: AddressBookRepository

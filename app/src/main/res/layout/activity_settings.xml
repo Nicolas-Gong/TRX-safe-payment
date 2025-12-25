@@ -32,9 +32,13 @@
             android:layout_marginBottom="8dp" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutSellerAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
+            app:endIconMode="custom"
+            app:endIconDrawable="@drawable/ic_address_book"
+            app:endIconContentDescription="从地址簿选取"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -242,6 +246,15 @@
             android:layout_height="56dp"
             android:text="@string/settings_lock_price"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginBottom="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewPrivateKey"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="查看私钥 (需验证)"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:textColor="@color/warning"
             android:layout_marginBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton

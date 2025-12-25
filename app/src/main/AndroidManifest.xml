@@ -50,6 +50,19 @@
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <!-- 地址簿界面 -->
+        <activity
+            android:name=".ui.AddressBookActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- 锁定界面 -->
+        <activity
+            android:name=".ui.LockActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
             
         <!-- 严格禁止导出任何组件给外部应用（安全约束） -->
         <!-- 禁止 WalletConnect、DApp 浏览器等功能 -->

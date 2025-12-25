@@ -129,6 +129,22 @@ class TransactionRecorder(context: Context) {
         val json = gson.toJson(records)
         prefs.edit().putString(KEY_RECORDS, json).apply()
     }
+
+    /**
+     * 更新交易记录
+     * 
+     * @param txid 交易 ID
+     * @param updater 更新逻辑
+     */
+    fun updateRecord(txid: String, updater: (TransactionRecord) -> TransactionRecord) {
+        val records = getAllRecords().toMutableList()
+        val index = records.indexOfFirst { it.txid == txid }
+        if (index != -1) {
+            records[index] = updater(records[index])
+            val json = gson.toJson(records)
+            prefs.edit().putString(KEY_RECORDS, json).apply()
+        }
+    }
     
     /**
      * 获取所有交易记录

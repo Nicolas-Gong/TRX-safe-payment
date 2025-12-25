@@ -348,9 +348,28 @@ class WalletManager(private val context: Context? = null) {
         }
     }
     
-    // ========================================
-    // 以下方法被禁用（安全约束）
-    // ========================================
+    /**
+     * 获取私钥用于备份
+     * 
+     * 安全警告：
+     * 1. 必须在经过高强度生物识别验证后调用
+     * 2. 调用后应立即在内存中清除
+     * 3. 仅用于备份目的
+     * 
+     * @return 私钥（16 进制字符串）
+     * @throws SecurityException 获取失败或钱包不存在时抛出
+     */
+    @Throws(SecurityException::class)
+    fun getPrivateKeyForBackup(): String {
+        if (!hasWallet()) {
+            throw SecurityException("钱包不存在")
+        }
+        if (isWatchOnly()) {
+            throw SecurityException("观察钱包无私钥")
+        }
+        
+        return keyStore?.getPrivateKey() ?: throw SecurityException("密钥获取失败")
+    }
     
     /**
      * 导出私钥

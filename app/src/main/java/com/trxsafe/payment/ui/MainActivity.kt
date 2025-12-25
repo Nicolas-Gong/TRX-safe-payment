@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
  * 主界面
  * 显示钱包余额、地址和操作入口
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
     
     private lateinit var binding: ActivityMainBinding
     private lateinit var walletManager: WalletManager
@@ -38,16 +38,10 @@ class MainActivity : AppCompatActivity() {
         walletManager = WalletManager(this)
         
         initViews()
-        
-        // 检查应用锁
-        checkAppLock()
     }
     
     override fun onResume() {
         super.onResume()
-        
-        // 检查 App 锁定状态
-        checkAppLockOnResume()
         
         refreshWalletState()
     }
@@ -66,8 +60,8 @@ class MainActivity : AppCompatActivity() {
         
         // 刷新余额 (点击余额文本)
         binding.tvBalance.setOnClickListener {
-            // TODO: 实现余额刷新逻辑
-            Toast.makeText(this, "正在刷新余额...", Toast.LENGTH_SHORT).show()
+            refreshWalletState()
+            Toast.makeText(this, "余额正在更新...", Toast.LENGTH_SHORT).show()
         }
         
         // 导航按钮
@@ -121,66 +115,16 @@ class MainActivity : AppCompatActivity() {
             quickPayMultiplier++
             updateQuickPayQR()
         }
-    }
-    
-    /**
-     * 检查是否需要应用锁（onCreate 时调用）
-     */
-    private fun checkAppLock() {
-        // 使用协程加载配置
-        androidx.lifecycle.lifecycleScope.launchWhenStarted {
-             val repository = com.trxsafe.payment.settings.SettingsRepository(this@MainActivity)
-             val config = repository.loadConfig()
-             
-             if (config.isBiometricEnabled) {
-                 // 锁定界面
-                 binding.layoutLockScreen.visibility = View.VISIBLE
-                 // 立即尝试解锁
-                 performUnlock()
-             }
+        
+        // 立即锁定按钮
+        binding.btnLockNow.setOnClickListener {
+            val app = com.trxsafe.payment.TrxSafeApplication.getInstance(this)
+            app.appLockManager.lock()
+            startActivity(Intent(this, LockActivity::class.java))
+            Toast.makeText(this, "应用已锁定", Toast.LENGTH_SHORT).show()
         }
     }
     
-    /**
-     * 检查 App 锁定状态（onResume 时调用）
-     */
-    private fun checkAppLockOnResume() {
-        val app = com.trxsafe.payment.TrxSafeApplication.getInstance(this)
-        val appLockManager = app.appLockManager
-        
-        // 检查是否需要锁定
-        if (appLockManager.checkShouldLock()) {
-            binding.layoutLockScreen.visibility = View.VISIBLE
-            performUnlock()
-        }
-    }
-    
-    /**
-     * 执行解锁逻辑
-     */
-    private fun performUnlock() {
-        val authManager = com.trxsafe.payment.security.BiometricAuthManager(this)
-        val app = com.trxsafe.payment.TrxSafeApplication.getInstance(this)
-        val appLockManager = app.appLockManager
-        
-        authManager.authenticate(
-            title = "解锁应用",
-            subtitle = "验证您的身份以进入",
-            onSuccess = {
-                // 解锁成功，隐藏遮罩
-                binding.layoutLockScreen.visibility = View.GONE
-                appLockManager.unlock()
-                Toast.makeText(this, "解锁成功", Toast.LENGTH_SHORT).show()
-                refreshWalletState()
-            },
-            onError = { error ->
-                // 指纹错误等
-                Toast.makeText(this, "解锁失败：$error", Toast.LENGTH_SHORT).show()
-                // 保持锁定状态
-            }
-        )
-    }
-
     /**
      * 刷新钱包状态（根据是否存在钱包切换 UI）
      */
@@ -206,10 +150,32 @@ class MainActivity : AppCompatActivity() {
                 binding.tvWalletType.setBackgroundResource(R.drawable.bg_badge_primary)
             }
             
-            // TODO: 异步获取余额 (观察钱包和热钱包都可以查询余额)
-            
-            // 检查闪付模式 (Flash Pay Mode)
-            checkFlashPayMode()
+            // 异步获取余额 (观察钱包和热钱包都可以查询余额)
+            val repository = com.trxsafe.payment.settings.SettingsRepository(this)
+            lifecycleScope.launch {
+                val config = repository.loadConfig()
+                val apiWrapper = org.tron.trident.core.ApiWrapper(config.nodeUrl)
+                try {
+                    val broadcaster = com.trxsafe.payment.broadcast.TransactionBroadcaster(this@MainActivity, apiWrapper)
+                    val balanceSun = broadcaster.getAccountBalance(address ?: "")
+                    if (balanceSun == -1L) {
+                        binding.tvBalance.text = "查询失败"
+                    } else {
+                        val balanceTrx = com.trxsafe.payment.utils.AmountUtils.sunToTrx(balanceSun)
+                        binding.tvBalance.text = balanceTrx
+                    }
+                    
+                    // 自动检查闪付模式
+                    checkFlashPayMode()
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "获取余额失败", Toast.LENGTH_SHORT).show()
+                } finally {
+                    // 关闭 API 连接 (Trident 的 ApiWrapper 应该关闭以释放资源)
+                    withContext(Dispatchers.IO) {
+                        apiWrapper.close()
+                    }
+                }
+            }
         } else {
             // 无钱包 -> 显示设置页
             binding.layoutWalletInfo.visibility = View.GONE

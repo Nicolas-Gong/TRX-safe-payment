@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * 设置界面
  * 配置卖能量相关参数
  */
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : BaseActivity() {
     
     private lateinit var viewModel: SettingsViewModel
     private lateinit var binding: ActivitySettingsBinding
@@ -57,6 +57,11 @@ class SettingsActivity : AppCompatActivity() {
                     viewModel.updateSellerAddress(address)
                 }
             }
+        }
+
+        // 从地址簿选取图标点击
+        binding.layoutSellerAddress.setEndIconOnClickListener {
+            showAddressBookSelectionDialog()
         }
         
         // 设置单价输入监听
@@ -137,6 +142,89 @@ class SettingsActivity : AppCompatActivity() {
                 viewModel.unlockPrice()
             } else {
                 viewModel.lockPrice()
+            }
+        }
+        
+        // 查看私钥按钮
+        binding.btnViewPrivateKey.setOnClickListener {
+            handleViewPrivateKey()
+        }
+    }
+    
+    /**
+     * 处理查看私钥请求
+     */
+    private fun handleViewPrivateKey() {
+        val walletManager = com.trxsafe.payment.wallet.WalletManager(this)
+        if (!walletManager.hasWallet() || walletManager.isWatchOnly()) {
+            Toast.makeText(this, "当前无私钥可查看", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // 高强度生物识别验证
+        val authManager = com.trxsafe.payment.security.BiometricAuthManager(this)
+        authManager.authenticate(
+            title = "验证身份以查看私钥",
+            subtitle = "私钥是您的资产唯一控制权，请确保周围安全",
+            onSuccess = {
+                try {
+                    val privateKey = walletManager.getPrivateKeyForBackup()
+                    showPrivateKeyDialog(privateKey)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "获取失败：${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onError = { error ->
+                Toast.makeText(this, "认证失败：$error", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    /**
+     * 显示私钥
+     */
+    private fun showPrivateKeyDialog(privateKey: String) {
+        val message = "您的私钥：\n\n$privateKey\n\n请绝对禁止将此信息发送给任何人！建议离线抄写在纸上。"
+        
+        AlertDialog.Builder(this)
+            .setTitle("安全提示：私钥")
+            .setMessage(message)
+            .setPositiveButton("复制到剪贴板") { _, _ ->
+                val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("TRX Private Key", privateKey)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(this, "私钥已复制，请尽快粘贴到安全处并清除剪贴板", Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("关闭", null)
+            .show()
+    }
+    
+    /**
+     * 显示地址簿选择对话框
+     */
+    private fun showAddressBookSelectionDialog() {
+        lifecycleScope.launch {
+            val database = com.trxsafe.payment.data.AppDatabase.getInstance(this@SettingsActivity)
+            val addressBookRepo = com.trxsafe.payment.data.repository.AddressBookRepository(database.addressBookDao())
+            
+            // 获取所有地址
+            addressBookRepo.getAllAddresses().collectLatest { list ->
+                if (list.isEmpty()) {
+                    Toast.makeText(this@SettingsActivity, "地址簿为空", Toast.LENGTH_SHORT).show()
+                    return@collectLatest
+                }
+
+                val names = list.map { "${it.name} (${it.address.take(6)}...${it.address.takeLast(6)})" }.toTypedArray()
+                
+                AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("选择收款地址")
+                    .setItems(names) { _, which ->
+                        val selected = list[which]
+                        binding.etSellerAddress.setText(selected.address)
+                        viewModel.updateSellerAddress(selected.address)
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
             }
         }
     }
