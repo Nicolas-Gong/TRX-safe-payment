@@ -1,0 +1,166 @@
+<resources>
+    <!-- 应用名称 -->
+    <string name="app_name">TRX 安全支付</string>
+    
+    <!-- 主界面 -->
+    <string name="main_title">TRX 安全支付工具</string>
+    <string name="balance">余额</string>
+    <string name="trx_unit">TRX</string>
+    <string name="address">地址</string>
+    <string name="copy_address">复制地址</string>
+    <string name="transfer">转账</string>
+    <string name="transaction_history">交易历史</string>
+    <string name="settings">设置</string>
+    
+    <!-- 转账界面 -->
+    <string name="transfer_title">TRX 转账</string>
+    <string name="recipient_address">接收方地址</string>
+    <string name="amount">金额</string>
+    <string name="available_balance">可用余额：%s TRX</string>
+    <string name="transfer_all">全部转账</string>
+    <string name="confirm_transfer">确认转账</string>
+    <string name="cancel">取消</string>
+    
+    <!-- 交易历史 -->
+    <string name="history_title">交易历史</string>
+    <string name="no_transactions">暂无交易记录</string>
+    <string name="sent">发送</string>
+    <string name="received">接收</string>
+    <string name="pending">待确认</string>
+    <string name="confirmed">已确认</string>
+    <string name="failed">失败</string>
+    
+    <!-- 设置界面 -->
+    <string name="settings_title">设置</string>
+    <string name="wallet_management">钱包管理</string>
+    <string name="create_wallet">创建钱包</string>
+    <string name="import_wallet">导入钱包</string>
+    <string name="export_private_key">导出私钥</string>
+    <string name="network_settings">网络设置</string>
+    <string name="about">关于</string>
+    
+    <!-- 安全提示 -->
+    <string name="security_warning">安全提示</string>
+    <string name="only_trx_transfer">本应用仅支持 TRX 普通转账</string>
+    <string name="no_smart_contract">禁止任何智能合约调用</string>
+    <string name="no_trc20">不支持 TRC20 代币转账</string>
+    <string name="no_walletconnect">不支持 WalletConnect</string>
+    <string name="no_dapp_browser">不支持 DApp 浏览器</string>
+    
+    <!-- 错误信息 -->
+    <string name="error_invalid_address">地址格式错误</string>
+    <string name="error_invalid_amount">金额格式错误</string>
+    <string name="error_insufficient_balance">余额不足</string>
+    <string name="error_transaction_failed">交易失败：%s</string>
+    <string name="error_network">网络错误</string>
+    <string name="error_security_check_failed">安全检查失败：%s</string>
+    
+    <!-- 成功信息 -->
+    <string name="success_transaction_sent">交易已发送</string>
+    <string name="success_address_copied">地址已复制</string>
+    <string name="success_wallet_created">钱包创建成功</string>
+    <string name="success_wallet_imported">钱包导入成功</string>
+    
+    <!-- 确认对话框 -->
+    <string name="confirm_title">确认操作</string>
+    <string name="confirm_transfer_message">确认向 %1$s 转账 %2$s TRX？</string>
+    <string name="confirm_export_private_key">确认导出私钥？请妥善保管，切勿泄露！</string>
+    <string name="confirm">确认</string>
+    
+    <!-- 输入提示 -->
+    <string name="hint_recipient_address">请输入接收方地址（以 T 开头）</string>
+    <string name="hint_amount">请输入转账金额</string>
+    <string name="hint_private_key">请输入私钥（64 位 16 进制字符串）</string>
+    
+    <!-- Settings 模块 -->
+    <string name="settings_seller_address">卖能量收款地址</string>
+    <string name="settings_price_per_unit">单价（TRX）</string>
+    <string name="settings_multiplier">倍率</string>
+    <string name="settings_total_amount">总金额：%s TRX</string>
+    <string name="settings_lock_price">锁定单价</string>
+    <string name="settings_unlock_price">解锁单价</string>
+    <string name="settings_save_config">保存配置</string>
+    
+    <!-- Settings 提示信息 -->
+    <string name="settings_price_locked_hint">单价已锁定，点击解锁可修改</string>
+    <string name="settings_address_empty">请先设置收款地址</string>
+    <string name="settings_price_empty">请先设置单价</string>
+    <string name="settings_config_incomplete">配置不完整，请检查所有字段</string>
+    
+    <!-- Settings 确认对话框 -->
+    <string name="settings_confirm_address_title">确认收款地址</string>
+    <string name="settings_confirm_address_message">请确认收款地址是否正确：\n\n%s\n\n设置后修改地址将清空金额配置</string>
+    <string name="settings_price_warning_title">单价警告</string>
+    <string name="settings_price_warning_message">确认设置单价为 %s TRX？</string>
+    
+    <!-- Settings 验证错误 -->
+    <string name="settings_error_address_format">地址格式错误</string>
+    <string name="settings_error_contract_address">禁止使用合约地址</string>
+    <string name="settings_error_price_range">单价范围：0.001 ～ 10 TRX</string>
+    <string name="settings_error_multiplier_range">倍率范围：1 ～ 10</string>
+    
+    <!-- 风控模块 -->
+    <string name="risk_check_title">风险检查</string>
+    <string name="risk_level_pass">安全</string>
+    <string name="risk_level_warn">警告</string>
+    <string name="risk_level_block">阻止</string>
+    
+    <!-- 风控警告 -->
+    <string name="risk_warn_low_price">风险提示：单价异常低，请确认</string>
+    <string name="risk_warn_high_price">高风险提示：单价较高，请仔细核对</string>
+    <string name="risk_warn_very_high_price">高风险警告：单价过高，需要二次确认</string>
+    
+    <!-- 风控阻止 -->
+    <string name="risk_block_wrong_type">交易类型不正确，已阻止</string>
+    <string name="risk_block_has_data">交易包含额外数据，已阻止</string>
+    <string name="risk_block_amount_mismatch">交易金额不匹配，已阻止</string>
+    <string name="risk_block_invalid_amount">交易金额无效，已阻止</string>
+    
+    <!-- 风控确认对话框 -->
+    <string name="risk_confirm_title">风险确认</string>
+    <string name="risk_confirm_message">检测到交易风险：\n\n%s\n\n是否继续？</string>
+    <string name="risk_confirm_proceed">继续</string>
+    <string name="risk_confirm_cancel">取消</string>
+    
+    <!-- 转账确认对话框 -->
+    <string name="confirm_title">确认转账</string>
+    <string name="confirm_transaction_type">交易类型</string>
+    <string name="confirm_transaction_type_trx">TRX 普通转账</string>
+    <string name="confirm_recipient_address">收款地址</string>
+    <string name="confirm_price_per_unit">单价：%s TRX</string>
+    <string name="confirm_multiplier">倍率：×%d</string>
+    <string name="confirm_total_amount_label">总金额</string>
+    <string name="confirm_total_amount">%s TRX</string>
+    
+    <!-- 安全提示 -->
+    <string name="confirm_security_notice">安全提示</string>
+    <string name="confirm_warning_no_approve">✓ 不会授权资产</string>
+    <string name="confirm_warning_no_contract">✓ 不会调用合约</string>
+    
+    <!-- 长按确认提示 -->
+    <string name="confirm_hold_to_confirm">长按 2 秒确认</string>
+    <string name="confirm_hold_prompt">长按按钮 2 秒以确认转账</string>
+    <string name="confirm_wait_prompt">请等待 %s 秒后再确认</string>
+    <string name="confirm_hold_insufficient">长按时间不足，还需 %s 秒</string>
+    <string name="confirm_success">确认成功</string>
+    
+    <!-- UI 补充 -->
+    <string name="welcome_title">欢迎使用 TRX 安全支付</string>
+    <string name="welcome_message">请先创建或导入钱包以开始使用</string>
+    <string name="delete_wallet">删除钱包</string>
+    <string name="delete_wallet_title">删除钱包</string>
+    <string name="delete_wallet_message">确定要删除当前钱包吗？\n\n警告：删除后将无法恢复（除非您有私钥备份），且不仅限于本应用，该操作不可撤销！</string>
+    <string name="operation_hot_wallet">热钱包操作</string>
+    <string name="operation_cold_wallet">冷钱包 / 离线操作</string>
+    <string name="scan_qr_code">扫描二维码</string>
+    <string name="show_qr_code">显示二维码</string>
+    <string name="scan_prompt">请扫描二维码</string>
+    <string name="import_watch_wallet">导入观察钱包</string>
+    <string name="wallet_type_watch_only">仅观察</string>
+    <string name="wallet_type_hot">热钱包</string>
+    <string name="watch_only_restriction">观察钱包无法直接转账，请生成二维码使用冷钱包签名。</string>
+    <string name="hint_watch_address">请输入观察钱包地址</string>
+    <string name="wallet_status_label">当前状态：</string>
+</resources>
+
+

@@ -1,0 +1,40 @@
+# Gradle files
+.gradle/
+build/
+*/build/
+gradlew
+gradlew.bat
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+local.properties
+
+# Android
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Log Files
+*.log
+
+# NDK
+obj/
+
+# Backup files
+*~
+*.swp
+*.bak
+
+# Sensitive data
+secrets.properties
+keystore.properties

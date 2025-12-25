@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_bottom_sheet">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:background="#E0E0E0"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="交易详情"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:id="@+id/tvAmountLarge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="- 100.00 TRX"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvStatusBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="交易成功"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:background="@color/primary"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="32dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Details Grid -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <include layout="@layout/item_detail_row" android:id="@+id/rowFrom" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowTo" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowTxId" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowBlock" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowFee" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowUsage" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowTime" />
+        <include layout="@layout/item_detail_row" android:id="@+id/rowMemo" />
+
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTronscan"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="24dp"
+        android:text="在 Tronscan 浏览"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+</LinearLayout>
