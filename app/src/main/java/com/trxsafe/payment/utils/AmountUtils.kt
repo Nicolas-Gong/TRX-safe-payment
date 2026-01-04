@@ -15,7 +15,7 @@ object AmountUtils {
      * TRX 与 sun 的转换比例
      * 1 TRX = 1,000,000 sun
      */
-    private const val SUN_PER_TRX: Long = 1_000_000L
+    const val SUN_PER_TRX: Long = 1_000_000L
     
     /**
      * 将 TRX 转换为 sun
@@ -66,27 +66,28 @@ object AmountUtils {
     
     /**
      * 将 sun 转换为 TRX 字符串
-     * 
+     *
      * @param sunAmount sun 金额（long 类型）
      * @param decimals 保留小数位数（默认 6 位）
+     * @param trimTrailingZeros 是否去除尾部零（默认 true）
      * @return TRX 金额字符串
      */
-    fun sunToTrx(sunAmount: Long, decimals: Int = 6): String {
+    fun sunToTrx(sunAmount: Long, decimals: Int = 6, trimTrailingZeros: Boolean = true): String {
         if (sunAmount < 0) {
             throw IllegalArgumentException("金额不能为负数")
         }
-        
+
         // 计算整数部分和小数部分
         val integerPart = sunAmount / SUN_PER_TRX
         val decimalPart = sunAmount % SUN_PER_TRX
-        
+
         // 格式化小数部分
         val decimalStr = decimalPart.toString().padStart(6, '0')
         val trimmedDecimal = decimalStr.substring(0, decimals.coerceAtMost(6))
-            .trimEnd('0')
-        
+            .let { if (trimTrailingZeros) it.trimEnd('0') else it }
+
         // 返回格式化后的字符串
-        return if (trimmedDecimal.isEmpty()) {
+        return if (trimmedDecimal.isEmpty() || (trimTrailingZeros && trimmedDecimal.all { it == '0' })) {
             integerPart.toString()
         } else {
             "$integerPart.$trimmedDecimal"

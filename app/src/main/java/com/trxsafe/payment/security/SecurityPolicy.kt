@@ -66,9 +66,9 @@ object SecurityPolicy {
     
     /**
      * 是否允许 WalletConnect
-     * 硬性约束：禁止 WalletConnect
+     * 注意：WalletConnect功能已实现，但使用时请注意安全风险
      */
-    const val ALLOW_WALLET_CONNECT = false
+    const val ALLOW_WALLET_CONNECT = true
     
     /**
      * 是否允许 DApp 浏览器

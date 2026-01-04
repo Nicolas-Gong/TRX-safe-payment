@@ -96,7 +96,8 @@ class AppLockManager(context: Context) {
      */
     fun unlock() {
         isLocked = false
-        lastPauseTime = 0L
+        // 重置超时计时器，防止立即重新锁定
+        resetTimeout()
     }
     
     /**

@@ -1,57 +1,367 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-<ScrollView
-    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="?attr/colorSurface">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
 
-        <RelativeLayout
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="32dp">
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorSurface"
+            app:title="@string/main_title"
+            app:titleTextColor="?attr/colorOnSurface"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall" />
 
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/main_title"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <ImageButton
-                android:id="@+id/btnLockNow"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_launcher_foreground"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:tint="@color/text_secondary"
-                android:contentDescription="锁定应用" />
-        </RelativeLayout>
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- 钱包信息区域 (如果有钱包则显示) -->
         <LinearLayout
-            android:id="@+id/layoutWalletInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone">
+            android:padding="20dp">
 
-            <!-- 快速收款/闪付区域 -->
+            <!-- 钱包信息区域 -->
+            <LinearLayout
+                android:id="@+id/layoutWalletInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <!-- 钱包选择区域 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardWalletSelector"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/colorOutlineVariant"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="16dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_preferences"
+                            android:layout_marginEnd="12dp"
+                            app:tint="?attr/colorPrimary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvCurrentWalletName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="默认钱包"
+                                android:textAppearance="?attr/textAppearanceTitleSmall"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <TextView
+                                android:id="@+id/tvCurrentWalletAddress"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:ellipsize="middle"
+                                android:singleLine="true" />
+
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@android:drawable/ic_menu_more"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 余额显示卡片 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/colorOutlineVariant"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:stateListAnimator="@animator/card_state_list_anim">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <!-- 标题和刷新按钮 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="账户余额"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnRefreshBalance"
+                                style="?attr/materialIconButtonOutlinedStyle"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                app:icon="@android:drawable/ic_menu_rotate"
+                                app:iconTint="?attr/colorPrimary"
+                                android:contentDescription="刷新余额" />
+
+                        </LinearLayout>
+
+                        <!-- TRX余额 -->
+                        <TextView
+                            android:id="@+id/tvBalance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.000000 TRX"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvBalanceUSD"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="≈ $0.00 USD"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginBottom="16dp"
+                            android:visibility="gone" />
+
+                        <!-- USDT余额 -->
+                        <TextView
+                            android:id="@+id/tvUsdtBalance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.000000 USDT"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorSecondary"
+                            android:layout_marginBottom="4dp" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- TRX闪付展示区域 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/layoutFlashPay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/colorOutlineVariant">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="TRX闪付"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="16dp"
+                            android:textColor="?attr/colorPrimary" />
+
+                        <!-- 收款地址显示 -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:hint="收款地址">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etFlashPayAddress"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"
+                                android:focusable="false"
+                                android:clickable="false"
+                                android:textColor="?attr/colorOnSurface" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- 支付金额显示 -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="20dp"
+                            android:hint="支付金额 (TRX)">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etFlashPayAmount"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal"
+                                android:focusable="false"
+                                android:clickable="false"
+                                android:textColor="?attr/colorOnSurface" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- TRX闪付转账按钮 -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnFlashPay"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="立即转账"
+                            android:layout_marginBottom="8dp"
+                            app:icon="@android:drawable/ic_menu_send"
+                            app:iconGravity="textStart" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- TRX转账按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTransfer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="TRX转账"
+                    android:layout_marginBottom="24dp"
+                    app:icon="@android:drawable/ic_menu_send"
+                    app:iconGravity="textStart"
+                    style="?attr/materialButtonOutlinedStyle" />
+
+            </LinearLayout>
+
+            <!-- 功能按钮网格布局 -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/layoutQuickPay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="功能"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
+
+                    <GridLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:columnCount="4"
+                        android:rowCount="1">
+
+                        <!-- 交易历史 -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnHistory"
+                            style="?attr/materialIconButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            app:icon="@android:drawable/ic_menu_recent_history"
+                            android:text="历史"
+                            app:iconTint="?attr/colorPrimary" />
+
+                        <!-- 地址簿 -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddressBook"
+                            style="?attr/materialIconButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            app:icon="@android:drawable/ic_menu_myplaces"
+                            android:text="地址簿"
+                            app:iconTint="?attr/colorSecondary" />
+
+                        <!-- 设置 -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSettings"
+                            style="?attr/materialIconButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            app:icon="@android:drawable/ic_menu_manage"
+                            android:text="设置"
+                            app:iconTint="?attr/colorTertiary" />
+
+                        <!-- 钱包管理 -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnManageWalletMain"
+                            style="?attr/materialIconButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            app:icon="@android:drawable/ic_menu_preferences"
+                            android:text="钱包"
+                            app:iconTint="?attr/colorPrimary" />
+
+                    </GridLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 转账表单区域 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/layoutTransfer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
@@ -63,291 +373,120 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
-                    android:background="#F8F9FA">
+                    android:padding="20dp"
+                    android:background="?attr/colorSurfaceVariant">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="闪付模式"
-                        android:textSize="18sp"
+                        android:text="TRX转账"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textStyle="bold"
                         android:gravity="center"
                         android:layout_marginBottom="16dp"
-                        android:textColor="@color/primary"/>
+                        android:textColor="?attr/colorPrimary"/>
 
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        android:layout_marginBottom="16dp">
-                        <ImageView
-                            android:id="@+id/ivQuickQR"
-                            android:layout_width="240dp"
-                            android:layout_height="240dp"
-                            android:padding="8dp"
-                            android:background="@color/white"
-                            android:scaleType="fitCenter"/>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <LinearLayout
+                    <!-- 转账表单 -->
+                    <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="16dp"
+                        android:hint="收款地址">
 
-                        <TextView
-                            android:layout_width="0dp"
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTransferAddress"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="笔数/倍率"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_secondary"/>
+                            android:inputType="text" />
 
-                        <ImageButton
-                            android:id="@+id/btnQuickMinus"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/ic_remove"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            app:tint="@color/primary"/>
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                        <TextView
-                            android:id="@+id/tvQuickMultiplier"
-                            android:layout_width="60dp"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:hint="转账金额 (TRX)">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTransferAmount"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:text="1"
-                            android:textSize="22sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary"/>
+                            android:inputType="numberDecimal" />
 
-                        <ImageButton
-                            android:id="@+id/btnQuickPlus"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/ic_add"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            app:tint="@color/primary"/>
-                    </LinearLayout>
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
-                        android:id="@+id/tvQuickTotal"
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnExecuteTransfer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="结算：0.00 TRX"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:textColor="@color/primary"/>
-                        
-                    <TextView
-                        android:id="@+id/tvQuickSummary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="发往: T..."
-                        android:textSize="10sp"
-                        android:gravity="center"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginTop="4dp"
-                        android:ellipsize="middle"
-                        android:singleLine="true"/>
+                        android:text="确认转账"
+                        android:layout_marginBottom="8dp" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/balance"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary" />
-
-            <TextView
-                android:id="@+id/tvBalance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0.000000"
-                android:textSize="36sp"
-                android:textStyle="bold"
-                android:textColor="@color/primary"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/trx_unit"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="32dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/address"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="8dp" />
-            
-            <TextView
-                android:id="@+id/tvWalletType"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAddress"
+            <!-- 设置提示区域 -->
+            <LinearLayout
+                android:id="@+id/layoutSetupRequired"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                app:cardCornerRadius="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:gravity="center"
+                android:layout_marginTop="48dp">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@android:drawable/ic_menu_manage"
+                    android:layout_marginBottom="24dp"
+                    android:alpha="0.7" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="欢迎使用TRX安全支付"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="在使用前，请先完成以下设置：\n\n• 设置收款地址\n• 设置单价和倍率\n• 绑定钱包"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:gravity="center"
+                    android:layout_marginBottom="32dp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:background="@color/surface"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center">
 
-                    <TextView
-                        android:id="@+id/tvAddress"
-                        android:layout_width="match_parent"
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGoToSettings"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="T..."
-                        android:textSize="14sp"
-                        android:textColor="@color/text_primary"
-                        android:ellipsize="middle"
-                        android:fontFamily="monospace"
-                        android:gravity="center"
-                        android:singleLine="true" />
-                    
-                    <TextView
-                        android:layout_width="match_parent"
+                        android:text="开始设置"
+                        android:layout_marginEnd="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnManageWalletSetup"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/copy_address"
-                        android:textSize="12sp"
-                        android:textColor="@color/primary"
-                        android:gravity="center"
-                        android:layout_marginTop="8dp"/>
+                        android:text="钱包管理"
+                        style="?attr/materialButtonOutlinedStyle" />
+
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnTransfer"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="@string/transfer"
-                android:textSize="16sp"
-                android:layout_marginBottom="16dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnHistory"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="@string/transaction_history"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_marginBottom="16dp" />
-                
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSettings"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="@string/settings"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_marginBottom="16dp" />
-                
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAddressBook"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="地址簿"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_marginBottom="16dp" />
-                
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDeleteWallet"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/delete_wallet" 
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:textColor="@color/error" />
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- 钱包未创建区域 -->
-        <LinearLayout
-            android:id="@+id/layoutWalletSetup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:layout_marginTop="48dp"
-            android:visibility="gone">
+    </androidx.core.widget.NestedScrollView>
 
-            <ImageView
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:src="@drawable/ic_launcher_foreground" 
-                android:layout_marginBottom="32dp"
-                android:contentDescription="@null"
-                app:tint="@color/primary" 
-                xmlns:app="http://schemas.android.com/apk/res-auto"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/welcome_title"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-                
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/welcome_message"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="48dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCreateWallet"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="@string/create_wallet"
-                android:layout_marginBottom="16dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnImportWallet"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="@string/import_wallet"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_marginBottom="16dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnImportWatchWallet"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="@string/import_watch_wallet"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-        </LinearLayout>
-
-
-    </LinearLayout>
-</ScrollView>
-
-</FrameLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

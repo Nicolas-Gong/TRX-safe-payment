@@ -2,7 +2,7 @@
 
 [中文](./README.md) | [English](./README_EN.md)
 
-TRX Safe Payment 是一款专为 **TRON (TRX) 能量交易场景** 设计的高安全 Android 钱包应用。它通过多层验证、严格的交易限制以及冷热分离机制，为用户的资产提供企业级的防护。
+TRX Safe Payment 是一款专为 **TRON (TRX) 能量交易场景** 设计的高安全 Android 钱包应用。它通过多层验证、严格的交易限制以及冷热分离机制，为用户的TRX资产提供企业级的防护。
 
 ## 🌟 核心亮点
 
@@ -11,13 +11,15 @@ TRX Safe Payment 是一款专为 **TRON (TRX) 能量交易场景** 设计的高�
 - **观察钱包模式**：支持仅导入地址（Watch-Only），实现资产监控的同时保持私钥绝对离线。
 - **多层风控校验**：集成单价锁定、倍率控制、白名单比对等多重实时风险识别机制。
 - **生物识别防护**：集成 App 锁定、交易确认前的指纹/面部动态验证。
+- **WalletConnect集成**：支持连接外部钱包进行安全的交易签名和广播。
 
 ## 🛠️ 功能特性
 
 ### 1. 钱包与资产管理
 - **多种导入方式**：支持生成新地址、私钥导入以及观察钱包（只读地址）导入。
 - **加密存储**：使用 `EncryptedSharedPreferences` 和 Android Keystore 加密私钥数据。
-- **资产监控**：多账户切换，清晰展示钱包类型（热钱包/观察钱包）。
+- **多账户管理**：支持多钱包切换，清晰展示钱包类型（热钱包/观察钱包）。
+- **余额监控**：实时显示 TRX 余额，支持余额刷新功能。
 
 ### 2. 能量交易配置
 - **单价锁定**：支持配置 0.001 - 10 TRX 的单位能量价格，锁定后防止交易金额被篡改。
@@ -55,14 +57,20 @@ TRX Safe Payment 是一款专为 **TRON (TRX) 能量交易场景** 设计的高�
 3. 连接物理设备（建议开启生物识别支持）。
 4. 运行 `app` 模块。
 
-## 📄 Documentation / 说明文档
+### WalletConnect 集成
+WalletConnect功能已完全集成，使用Reown AppKit实现：
+- **自动配置**：项目ID已内置，无需手动配置
+- **兼容性**：支持所有兼容WalletConnect的钱包应用
+- **安全性**：端到端加密通信，安全的交易签名
+- **用户体验**：一键连接，直观的钱包选择界面
 
-- **[GETTING_STARTED_ZH.md](./GETTING_STARTED_ZH.md)**: **Beginner's guide to Run & Build APK (Chinese)**.
-- **[SECURITY.md](./SECURITY.md)**: Deep dive into the four-layer security architecture.
-- **[USER_GUIDE_ZH.md](./USER_GUIDE_ZH.md)**: Detailed Chinese operation manual.
-- [开发者说明 (DEVELOPER_GUIDE.md)](./DEVELOPER_GUIDE.md) - 模块说明与扩展建议。
-- [项目开发总结 (PROJECT_SUMMARY.md)](./PROJECT_SUMMARY.md) - 开发历程与功能清单。
-- [信任与验证白皮书 (TRUST_AND_VERIFICATION.md)](./TRUST_AND_VERIFICATION.md) - **必读**：如何验证应用的安全性和透明性。
+**使用方法**：
+1. 在应用中点击支付按钮
+2. 选择"连接钱包"选项
+3. 从弹出的钱包列表中选择您喜欢的钱包应用
+4. 在钱包应用中确认连接
+5. 即可使用外部钱包进行TRX交易签名
+
 
 ## 🔍 如何验证？
 

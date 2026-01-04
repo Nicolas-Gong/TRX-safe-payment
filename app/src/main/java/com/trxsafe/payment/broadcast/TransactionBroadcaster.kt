@@ -1,6 +1,7 @@
 package com.trxsafe.payment.broadcast
 
 import android.content.Context
+import com.trxsafe.payment.network.TronHttpClient
 import com.trxsafe.payment.settings.SettingsConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,7 +13,7 @@ import java.util.*
 
 /**
  * 交易广播器
- * 
+ *
  * 功能：
  * - 广播前再次校验
  * - 广播到 TRON 网络
@@ -20,55 +21,100 @@ import java.util.*
  */
 class TransactionBroadcaster(
     private val context: Context,
-    private val apiWrapper: ApiWrapper
+    private val apiWrapper: ApiWrapper? = null,
+    private val httpClient: TronHttpClient? = null
 ) {
     
     /**
      * 获取账户余额 (TRX)
-     * 
+     *
      * @param address 账户地址
      * @return 余额 (SUN)
      */
     suspend fun getAccountBalance(address: String): Long = withContext(Dispatchers.IO) {
+        android.util.Log.d("TransactionBroadcaster", "getAccountBalance called with address: $address")
         try {
-            val account = apiWrapper.getAccount(address)
-            account.balance
+            if (httpClient != null) {
+                android.util.Log.d("TransactionBroadcaster", "Using HTTP client")
+                val balance = httpClient.getAccountBalance(address)
+                android.util.Log.d("TransactionBroadcaster", "HTTP client returned balance: $balance")
+                balance
+            } else {
+                android.util.Log.d("TransactionBroadcaster", "Using gRPC client")
+                val account = apiWrapper?.getAccount(address)
+                val balance = account?.balance ?: -1L
+                android.util.Log.d("TransactionBroadcaster", "gRPC client returned balance: $balance")
+                balance
+            }
         } catch (e: io.grpc.StatusRuntimeException) {
             // 节点连接问题
+            android.util.Log.e("TransactionBroadcaster", "gRPC StatusRuntimeException", e)
             -1L // 用 -1 表示查询失败，而不是 0（0 可能是真实余额）
         } catch (e: Exception) {
+            android.util.Log.e("TransactionBroadcaster", "Exception in getAccountBalance", e)
             -1L
         }
     }
 
     /**
      * 获取交易状态
-     * 
+     *
      * @param txid 交易 ID
      * @return 交易状态信息
      */
     suspend fun getTransactionStatus(txid: String): TransactionStatusInfo = withContext(Dispatchers.IO) {
         try {
-            val transaction = apiWrapper.getTransactionById(txid)
-            if (transaction == null || transaction.rawData.timestamp == 0L) {
-                return@withContext TransactionStatusInfo.NotFound
-            }
+            if (httpClient != null) {
+                // 使用HTTP API
+                val transaction = httpClient.getTransactionById(txid)
+                if (transaction == null) {
+                    return@withContext TransactionStatusInfo.NotFound
+                }
 
-            val info = apiWrapper.getTransactionInfoById(txid)
-            if (info == null || info.id.isEmpty) {
-                return@withContext TransactionStatusInfo.Pending
-            }
+                val info = httpClient.getTransactionInfoById(txid)
+                if (info == null) {
+                    return@withContext TransactionStatusInfo.Pending
+                }
 
-            if (info.receipt.result == org.tron.trident.proto.Response.TransactionInfo.code.FAILED) {
-                return@withContext TransactionStatusInfo.Failed(info.resMessage.toStringUtf8())
-            }
+                val resultValue = info.get("receipt")?.asJsonObject?.get("result")?.asInt ?: 0
+                if (resultValue != 1) {
+                    return@withContext TransactionStatusInfo.Failed("Transaction failed with result code: $resultValue")
+                }
 
-            TransactionStatusInfo.Success(
-                blockHeight = info.blockNumber,
-                feeSun = info.fee,
-                netUsage = info.receipt.netUsage,
-                energyUsage = info.receipt.energyUsage
-            )
+                val blockNumber = info.get("blockNumber")?.asLong ?: 0L
+                val fee = info.get("fee")?.asLong ?: 0L
+                val netUsage = info.get("receipt")?.asJsonObject?.get("netUsage")?.asLong ?: 0L
+                val energyUsage = info.get("receipt")?.asJsonObject?.get("energyUsage")?.asLong ?: 0L
+
+                TransactionStatusInfo.Success(
+                    blockHeight = blockNumber,
+                    feeSun = fee,
+                    netUsage = netUsage,
+                    energyUsage = energyUsage
+                )
+            } else {
+                // 使用gRPC
+                val transaction = apiWrapper?.getTransactionById(txid)
+                if (transaction == null || transaction.rawData.timestamp == 0L) {
+                    return@withContext TransactionStatusInfo.NotFound
+                }
+
+                val info = apiWrapper?.getTransactionInfoById(txid)
+                if (info == null || info.id.isEmpty) {
+                    return@withContext TransactionStatusInfo.Pending
+                }
+
+                if (info.receipt.resultValue != 0) {
+                    return@withContext TransactionStatusInfo.Failed("Transaction failed with result code: ${info.receipt.resultValue}")
+                }
+
+                TransactionStatusInfo.Success(
+                    blockHeight = info.blockNumber,
+                    feeSun = info.fee,
+                    netUsage = info.receipt.netUsage,
+                    energyUsage = info.receipt.energyUsage
+                )
+            }
         } catch (e: io.grpc.StatusRuntimeException) {
             val msg = when (e.status.code) {
                 io.grpc.Status.Code.UNAVAILABLE -> "节点不可访问"
@@ -85,7 +131,7 @@ class TransactionBroadcaster(
     
     /**
      * 广播交易
-     * 
+     *
      * @param transaction 已签名的交易
      * @param config Settings 配置（用于校验金额）
      * @return 广播结果
@@ -94,35 +140,38 @@ class TransactionBroadcaster(
         transaction: Chain.Transaction,
         config: SettingsConfig
     ): BroadcastResult = withContext(Dispatchers.IO) {
-        
+
         try {
             // 1. 广播前再次校验
             validateBeforeBroadcast(transaction, config)
-            
+
             // 2. 广播交易
-            val response = apiWrapper.broadcastTransaction(transaction)
-            
-            // 3. 处理响应
-            if (response.result) {
-                handleSuccess(transaction, config)
+            val txid = if (httpClient != null) {
+                httpClient.broadcastTransactionRaw(transaction)
             } else {
-                handleFailure(response.message.toStringUtf8()) // Ensure string format
+                apiWrapper?.broadcastTransaction(transaction) ?: throw Exception("无可用客户端")
             }
-            
+
+            // 3. 广播成功，处理结果
+            handleSuccess(transaction, config)
+
         } catch (e: BroadcastException) {
             BroadcastResult.Failure(e.message ?: "校验失败")
         } catch (e: io.grpc.StatusRuntimeException) {
             val friendlyMsg = when (e.status.code) {
-                io.grpc.Status.Code.UNAVAILABLE -> "节点无法连接，请检查网络或更换节点"
-                io.grpc.Status.Code.DEADLINE_EXCEEDED -> "连接节点超时"
-                io.grpc.Status.Code.UNAUTHENTICATED -> "节点鉴权失败"
-                else -> "节点错误 (${e.status.code}): ${e.status.description}"
+                io.grpc.Status.Code.UNAVAILABLE -> "节点无法连接，请尝试更换节点：TronGrid备用、TronStack或Public Node"
+                io.grpc.Status.Code.DEADLINE_EXCEEDED -> "连接节点超时，请检查网络连接或尝试其他节点"
+                io.grpc.Status.Code.UNAUTHENTICATED -> "节点访问受限，请更换到其他公共节点"
+                else -> "节点错误 (${e.status.code}): ${e.status.description}，建议更换节点"
             }
             BroadcastResult.Failure(friendlyMsg)
         } catch (e: java.net.ConnectException) {
             BroadcastResult.Failure("无法连接到节点，请检查网络设置")
         } catch (e: Exception) {
-            BroadcastResult.Failure("发生未知错误：${e.message}")
+            // 解析TRON特定的错误信息
+            val errorMessage = e.message ?: "广播失败"
+            val readableMessage = parseErrorMessage(errorMessage)
+            BroadcastResult.Failure(readableMessage)
         }
     }
     
@@ -239,20 +288,32 @@ class TransactionBroadcaster(
     private fun parseErrorMessage(errorMessage: String): String {
         return when {
             errorMessage.contains("balance is not sufficient", ignoreCase = true) ->
-                "余额不足"
-            
+                "余额不足，请检查账户余额"
+
             errorMessage.contains("account not exists", ignoreCase = true) ->
-                "账户不存在"
-            
+                "账户不存在，请检查地址是否正确"
+
             errorMessage.contains("expired", ignoreCase = true) ->
-                "交易已过期"
-            
+                "交易已过期，请重新发起交易"
+
             errorMessage.contains("duplicated", ignoreCase = true) ->
                 "交易已提交，请勿重复广播"
-            
+
             errorMessage.contains("validate signature error", ignoreCase = true) ->
-                "签名验证失败"
-            
+                "签名验证失败，请重新签名"
+
+            errorMessage.contains("TAPOS", ignoreCase = true) ->
+                "网络状态异常，请稍后重试或更换节点"
+
+            errorMessage.contains("tapos", ignoreCase = true) ->
+                "交易引用信息错误，请稍后重试"
+
+            errorMessage.contains("timeout", ignoreCase = true) ->
+                "网络请求超时，请检查网络连接"
+
+            errorMessage.contains("unavailable", ignoreCase = true) ->
+                "节点服务不可用，请稍后重试或更换节点"
+
             else -> "广播失败：$errorMessage"
         }
     }
@@ -273,25 +334,9 @@ class TransactionBroadcaster(
      */
     suspend fun getIncomingTransactions(address: String, limit: Int = 10): List<TransactionRecord> = withContext(Dispatchers.IO) {
         try {
-            // 注意：trident 的 apiWrapper.getTransactionsToThis 在某些节点可能不可用
-            // 这里我们尝试获取，如果失败则返回空列表
-            val transactions = apiWrapper.getTransactionsToThis(address, 0, limit)
-            transactions.map { tx ->
-                val txid = calculateTxId(tx)
-                val rawData = tx.rawData
-                val contract = rawData.getContract(0)
-                val transfer = org.tron.trident.proto.Contract.TransferContract.parseFrom(contract.parameter.value)
-                
-                TransactionRecord(
-                    txid = txid,
-                    fromAddress = org.tron.trident.utils.Base58Check.bytesToBase58(transfer.ownerAddress.toByteArray()),
-                    toAddress = org.tron.trident.utils.Base58Check.bytesToBase58(transfer.toAddress.toByteArray()),
-                    amountSun = transfer.amount,
-                    timestamp = rawData.timestamp,
-                    status = TransactionStatus.SUCCESS,
-                    memo = rawData.data.toStringUtf8()
-                )
-            }
+            // 注意：trident 的 apiWrapper 没有直接的 getTransactionsToThis 方法
+            // 这是一个降级处理，返回空列表
+            emptyList<TransactionRecord>()
         } catch (e: Exception) {
             // 降级处理：某些公共节点禁用了此 API，返回空列表
             emptyList()

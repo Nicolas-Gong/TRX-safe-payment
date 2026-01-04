@@ -16,6 +16,7 @@ import com.trxsafe.payment.data.entity.AddressBook
 import com.trxsafe.payment.data.repository.AddressBookRepository
 import com.trxsafe.payment.databinding.ActivityAddressBookBinding
 import com.trxsafe.payment.databinding.ItemAddressBookBinding
+import com.trxsafe.payment.utils.setDebouncedClick
 import com.trxsafe.payment.wallet.WalletManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -44,6 +45,11 @@ class AddressBookActivity : BaseActivity() {
         observeAddresses()
     }
     
+    override fun onResume() {
+        super.onResume()
+        observeAddresses()
+    }
+    
     private fun setupRecyclerView() {
         adapter = AddressBookAdapter(
             onEditClick = { address -> showEditDialog(address) },
@@ -55,7 +61,7 @@ class AddressBookActivity : BaseActivity() {
     }
     
     private fun setupListeners() {
-        binding.btnAddAddress.setOnClickListener {
+        binding.btnAddAddress.setDebouncedClick(debounceDelayMs = 1000) {
             showAddDialog()
         }
     }
@@ -234,11 +240,11 @@ class AddressBookAdapter(
                 binding.tvWhitelistBadge.visibility = View.GONE
             }
             
-            binding.btnEdit.setOnClickListener {
+            binding.btnEdit.setDebouncedClick(debounceDelayMs = 1000) {
                 onEditClick(addressBook)
             }
             
-            binding.btnDelete.setOnClickListener {
+            binding.btnDelete.setDebouncedClick(debounceDelayMs = 1000) {
                 onDeleteClick(addressBook)
             }
         }

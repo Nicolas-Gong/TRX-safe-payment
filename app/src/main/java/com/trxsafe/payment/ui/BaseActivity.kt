@@ -11,27 +11,42 @@ import com.trxsafe.payment.TrxSafeApplication
  */
 abstract class BaseActivity : AppCompatActivity() {
 
+    // 解锁后的缓冲时间（毫秒），防止立即重新锁定
+    private val UNLOCK_BUFFER_TIME = 1000L
+    private var lastUnlockTime = 0L
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
 
     override fun onResume() {
         super.onResume()
-        
+
         // 排除 LockActivity 本身，避免死循环
-        if (this is LockActivity) {
+        if (this::class.java == LockActivity::class.java) {
             return
         }
 
         val app = TrxSafeApplication.getInstance(this)
         val appLockManager = app.appLockManager
-        
+
+        // 检查解锁缓冲时间，避免立即重新锁定
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastUnlockTime < UNLOCK_BUFFER_TIME) {
+            return
+        }
+
         // 检查是否需要锁定
         if (appLockManager.checkShouldLock()) {
             val intent = Intent(this, LockActivity::class.java)
-            // 清除之前的栈，确保解锁后回到主界面或者保持当前？
-            // 通常是覆盖当前，所以不需要 FLAG_ACTIVITY_CLEAR_TOP
             startActivity(intent)
         }
+    }
+
+    /**
+     * 记录解锁时间，用于防止立即重新锁定
+     */
+    fun recordUnlockTime() {
+        lastUnlockTime = System.currentTimeMillis()
     }
 }

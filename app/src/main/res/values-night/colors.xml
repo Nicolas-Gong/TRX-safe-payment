@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material Design 3 颜色系统 - 深色模式 -->
+    <!-- 主要颜色 - 保持亮色模式的一致性，但调整亮度以适应深色背景 -->
+    <color name="primary">#90CAF9</color>
+    <color name="on_primary">#001B3E</color>
+    <color name="primary_container">#004A77</color>
+    <color name="on_primary_container">#D1E4FF</color>
+
+    <!-- 次要颜色 - 成功绿色在深色背景下的表现 -->
+    <color name="secondary">#81C784</color>
+    <color name="on_secondary">#003300</color>
+    <color name="secondary_container">#005230</color>
+    <color name="on_secondary_container">#A6F5B2</color>
+
+    <!-- 三级颜色 - 温暖橙色在深色背景下的表现 -->
+    <color name="tertiary">#FFB74D</color>
+    <color name="on_tertiary">#452B00</color>
+    <color name="tertiary_container">#6B3F00</color>
+    <color name="on_tertiary_container">#FFDCC8</color>
+
+    <!-- 错误颜色 -->
+    <color name="error">#EF5350</color>
+    <color name="on_error">#370000</color>
+    <color name="error_container">#93000A</color>
+    <color name="on_error_container">#FFDAD6</color>
+
+    <!-- 表面和背景颜色 - 深色主题的核心 -->
+    <color name="background">#0F0F0F</color>
+    <color name="on_background">#E6E1E5</color>
+    <color name="surface">#1C1B1F</color>
+    <color name="on_surface">#E6E1E5</color>
+    <color name="surface_variant">#49454F</color>
+    <color name="on_surface_variant">#CAC4D0</color>
+    <color name="surface_container">#211F23</color>
+    <color name="surface_container_high">#2B292D</color>
+
+    <!-- 轮廓和分隔符 - 在深色模式下需要更高的对比度 -->
+    <color name="outline">#938F99</color>
+    <color name="outline_variant">#49454F</color>
+
+    <!-- 阴影和提升 -->
+    <color name="shadow">#000000</color>
+    <color name="scrim">#000000</color>
+
+    <!-- 兼容性颜色 (支持现有布局文件) -->
+    <color name="background_primary">@color/background</color>
+    <color name="text_primary">@color/on_surface</color>
+    <color name="text_secondary">@color/on_surface_variant</color>
+    <color name="card_background">@color/surface</color>
+    <color name="divider">@color/outline_variant</color>
+</resources>

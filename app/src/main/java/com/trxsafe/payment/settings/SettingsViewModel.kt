@@ -2,6 +2,7 @@ package com.trxsafe.payment.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.trxsafe.payment.TrxSafeApplication
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +14,7 @@ import kotlinx.coroutines.launch
  */
 class SettingsViewModel(
     private val validator: SettingsValidator = SettingsValidator(),
-    private val repository: SettingsRepository = SettingsRepository()
+    private val repository: SettingsRepository
 ) : ViewModel() {
     
     // 当前配置状态

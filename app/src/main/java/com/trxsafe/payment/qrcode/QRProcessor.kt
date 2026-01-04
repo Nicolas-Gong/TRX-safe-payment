@@ -40,7 +40,7 @@ class MainAppQRGenerator {
         
         // 提取引用区块信息
         val refBlockHash = QRCodec.bytesToBase64(rawData.refBlockHash.toByteArray())
-        val refBlockHeight = rawData.refBlockBytes.toLong()
+        val refBlockHeight = 0L // TRON 交易中仅存储 2 字节 refBlockBytes，不直接提供完整高度
         
         // 原始交易数据（用于签名）
         val rawDataBytes = rawData.toByteArray()
@@ -108,7 +108,7 @@ class ColdWalletQRProcessor {
     
     /**
      * 签名交易并生成签名 QR 数据
-     * 
+     *
      * @param unsigned 未签名交易 QR 数据
      * @param walletManager 钱包管理器
      * @return 已签名交易 QR 数据
@@ -119,17 +119,19 @@ class ColdWalletQRProcessor {
         unsigned: UnsignedTransactionQR,
         walletManager: com.trxsafe.payment.wallet.WalletManager
     ): SignedTransactionQR {
-        
+
         // 重建交易对象
         val rawDataBytes = QRCodec.base64ToBytes(unsigned.rawDataBase64)
         val rawData = Chain.Transaction.raw.parseFrom(rawDataBytes)
-        
+
         val unsignedTransaction = Chain.Transaction.newBuilder()
             .setRawData(rawData)
             .build()
-        
-        // 签名交易
-        val signedTransaction = walletManager.signTransferContract(unsignedTransaction)
+
+        // 签名交易 - 使用runBlocking调用suspend函数
+        val signedTransaction = kotlinx.coroutines.runBlocking {
+            walletManager.signTransferContract(unsignedTransaction)
+        }
         
         // 提取签名
         val signature = signedTransaction.getSignature(0)

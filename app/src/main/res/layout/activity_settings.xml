@@ -149,11 +149,25 @@
             android:layout_marginTop="24dp"
             android:layout_marginBottom="16dp" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="点击选择节点 (显示延迟和状态)"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="8dp" />
+
         <LinearLayout
+            android:id="@+id/layoutNodeSelection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="16dp"
+            app:cardCornerRadius="8dp"
             android:layout_marginBottom="24dp">
 
             <TextView
@@ -163,11 +177,14 @@
                 android:textSize="14sp"
                 android:textColor="@color/text_secondary" />
 
-            <Spinner
-                android:id="@+id/spinnerNodes"
+            <TextView
+                android:id="@+id/tvCurrentNode"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="检测中..."
+                android:textSize="14sp"
+                android:textColor="@color/text_primary"
                 android:layout_marginStart="8dp" />
         </LinearLayout>
 

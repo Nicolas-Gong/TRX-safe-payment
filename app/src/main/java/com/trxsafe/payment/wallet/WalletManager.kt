@@ -9,8 +9,8 @@ import org.tron.trident.crypto.Hash
 import com.google.protobuf.ByteString
 
 /**
- * 最小化热钱包管理器
- * 
+ * 多钱包管理器
+ *
  * 硬性约束：
  * 1. 禁止导出私钥
  * 2. 仅支持签名 TransferContract
@@ -19,54 +19,63 @@ import com.google.protobuf.ByteString
  * 5. 禁止任意 data
  */
 class WalletManager(private val context: Context? = null) {
-    
+
     private var keyStore: SecureKeyStore? = null
     private var currentKeyPair: KeyPair? = null
+    private var currentWallet: WalletData? = null
     private val validator = TransactionValidator()
-    
+
     init {
         context?.let {
             keyStore = SecureKeyStore(it)
-            // 尝试加载已存在的钱包
-            loadWallet()
+            // 尝试加载当前钱包
+            loadCurrentWallet()
         }
     }
     
     /**
      * 创建新钱包
      * 本地生成私钥并加密存储
-     * 
-     * @return 钱包地址
+     *
+     * @param name 钱包名称
+     * @return 创建的钱包数据
      * @throws SecurityException 创建失败时抛出
      */
     @Throws(SecurityException::class)
-    fun createWallet(): String {
+    fun createWallet(name: String = "新钱包"): WalletData {
         if (keyStore == null) {
             throw SecurityException("KeyStore 未初始化")
         }
-        
-        // 检查是否已存在钱包
-        if (keyStore!!.hasWallet()) {
-            throw SecurityException("钱包已存在，请先删除现有钱包")
-        }
-        
+
         try {
             // 生成密钥对
             val keyPair = KeyPair.generate()
             val address = keyPair.toBase58CheckAddress()
             val privateKeyHex = keyPair.toPrivateKey()
-            
-            // 加密存储私钥
-            keyStore!!.savePrivateKey(privateKeyHex, address)
-            
-            // 保存到内存
-            currentKeyPair = keyPair
-            
-            return address
-            
+
+            // 创建钱包数据
+            val walletData = keyStore!!.createWallet(name, privateKeyHex, address)
+
+            // 设置为当前钱包
+            setCurrentWallet(walletData.id)
+
+            return walletData
+
         } catch (e: Exception) {
             throw SecurityException("创建钱包失败：${e.message}", e)
         }
+    }
+
+    /**
+     * 创建新钱包（兼容旧API）
+     * 本地生成私钥并加密存储
+     *
+     * @return 钱包地址
+     * @throws SecurityException 创建失败时抛出
+     */
+    @Throws(SecurityException::class)
+    fun createWallet(): String {
+        return createWallet("默认钱包").address
     }
     
     /**
@@ -189,61 +198,73 @@ class WalletManager(private val context: Context? = null) {
      * @return 钱包地址，如果不存在返回 null
      */
     fun getAddress(): String? {
-        return keyStore?.getWalletAddress() ?: currentKeyPair?.toBase58CheckAddress()
+        val storedAddress = keyStore?.getWalletAddress()
+        val keyPairAddress = currentKeyPair?.toBase58CheckAddress()
+        
+        android.util.Log.d("WalletManager", "getAddress - stored: $storedAddress, keyPair: $keyPairAddress")
+        
+        // 验证两个地址是否一致
+        if (storedAddress != null && keyPairAddress != null && storedAddress != keyPairAddress) {
+            android.util.Log.e("WalletManager", "地址不匹配！stored=$storedAddress, keyPair=$keyPairAddress")
+        }
+        
+        return storedAddress ?: keyPairAddress
     }
     
     /**
      * 签名 TransferContract 交易
-     * 
+     *
      * 硬性约束：
      * - 仅允许签名 TransferContract
      * - 禁止签名合约交易
      * - 禁止签名包含 data 的交易
      * - 观察钱包禁止签名
-     * 
+     *
      * @param transaction 待签名的交易
      * @return 签名后的交易
      * @throws SecurityException 签名失败或违反约束时抛出
      */
     @Throws(SecurityException::class)
-    fun signTransferContract(transaction: Chain.Transaction): Chain.Transaction {
+    suspend fun signTransferContract(transaction: Chain.Transaction): Chain.Transaction {
         // 检查钱包是否存在
         if (!hasWallet()) {
             throw SecurityException("钱包不存在")
         }
-        
+
         // 检查是否为观察钱包
         if (isWatchOnly()) {
             throw SecurityException("观察钱包无法签名，请使用生成二维码功能")
         }
-        
+
         // 确保 KeyPair 已加载
         if (currentKeyPair == null) {
             if (!loadWallet() || currentKeyPair == null) {
                  throw SecurityException("私钥加载失败")
             }
         }
-        
+
         // 硬性约束 1：验证交易类型
         validateTransactionType(transaction)
-        
+
         // 硬性约束 2：验证没有 data
         validateNoData(transaction)
-        
+
         // 硬性约束 3：验证没有合约调用
         validateNoContractCall(transaction)
-        
+
         try {
-            // 执行签名
-            val rawData = transaction.rawData.toByteArray()
-            val hash = Hash.sha256(rawData)
-            val signature = currentKeyPair!!.sign(hash)
-            
-            // 构建签名后的交易
-            return transaction.toBuilder()
-                .addSignature(ByteString.copyFrom(signature))
-                .build()
-                
+            // 执行签名 - 使用TransactionSigner进行签名
+            val signer = TransactionSigner()
+            val signedTransaction = signer.signTransaction(transaction, currentKeyPair!!)
+
+            // 使用transaction参数进行日志记录，确保参数被使用
+            val transactionId = signedTransaction.rawData.toByteArray().let { data ->
+                org.tron.trident.crypto.Hash.sha256(data)
+            }.joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+            android.util.Log.d("WalletManager", "交易签名完成，交易ID: ${transactionId.take(16)}...")
+
+            return signedTransaction
+
         } catch (e: SecurityException) {
             throw e
         } catch (e: Exception) {
@@ -281,7 +302,7 @@ class WalletManager(private val context: Context? = null) {
     @Throws(SecurityException::class)
     private fun validateNoData(transaction: Chain.Transaction) {
         val rawData = transaction.rawData
-        if (rawData.hasData() && rawData.data.size() > 0) {
+        if (!rawData.data.isEmpty) {
             throw SecurityException(
                 "禁止签名包含 data 的交易（${rawData.data.size()} 字节）"
             )
@@ -309,23 +330,223 @@ class WalletManager(private val context: Context? = null) {
     }
     
     /**
-     * 删除钱包
-     * 
+     * 删除钱包（兼容旧API）
+     *
      * @throws SecurityException 删除失败时抛出
      */
     @Throws(SecurityException::class)
     fun deleteWallet() {
-        keyStore?.clearWallet()
-        currentKeyPair = null
+        val currentWallet = getCurrentWallet()
+        if (currentWallet != null) {
+            deleteWallet(currentWallet.id)
+        }
+    }
+
+    /**
+     * 删除指定钱包
+     *
+     * @param walletId 钱包ID
+     * @throws SecurityException 删除失败时抛出
+     */
+    @Throws(SecurityException::class)
+    fun deleteWallet(walletId: String) {
+        keyStore?.deleteWallet(walletId)
+
+        // 如果删除的是当前钱包，清除内存缓存
+        if (currentWallet?.id == walletId) {
+            currentWallet = null
+            currentKeyPair = null
+        }
     }
     
     /**
      * 检查是否存在钱包
-     * 
+     *
      * @return true 表示已存在钱包
      */
     fun hasWallet(): Boolean {
         return keyStore?.hasWallet() == true
+    }
+
+    /**
+     * 获取所有钱包
+     *
+     * @return 钱包列表
+     */
+    fun getAllWallets(): List<WalletData> {
+        return keyStore?.getAllWallets() ?: emptyList()
+    }
+
+    /**
+     * 获取当前钱包
+     *
+     * @return 当前钱包数据，如果不存在返回 null
+     */
+    fun getCurrentWallet(): WalletData? {
+        return currentWallet ?: keyStore?.getCurrentWallet()?.also { currentWallet = it }
+    }
+
+    /**
+     * 设置当前钱包
+     *
+     * @param walletId 钱包ID
+     */
+    fun setCurrentWallet(walletId: String) {
+        keyStore?.setCurrentWallet(walletId)
+
+        // 重新加载当前钱包
+        loadCurrentWallet()
+    }
+
+    /**
+     * 加载当前钱包到内存
+     */
+    private fun loadCurrentWallet() {
+        currentWallet = keyStore?.getCurrentWallet()
+
+        // 如果是私钥钱包，加载私钥到内存
+        currentWallet?.let { wallet ->
+            if (wallet.type == WalletType.PRIVATE_KEY) {
+                wallet.privateKeyEncrypted?.let { privateKey ->
+                    try {
+                        currentKeyPair = KeyPair(privateKey)
+                    } catch (e: Exception) {
+                        currentKeyPair = null
+                    }
+                }
+            } else {
+                // 观察钱包没有私钥
+                currentKeyPair = null
+            }
+        } ?: run {
+            currentKeyPair = null
+        }
+    }
+
+    /**
+     * 导入私钥钱包（多钱包版本）
+     *
+     * @param name 钱包名称
+     * @param privateKeyHex 私钥
+     * @return 创建的钱包数据
+     */
+    @Throws(SecurityException::class)
+    fun importPrivateKeyWallet(name: String, privateKeyHex: String): WalletData {
+        if (keyStore == null) {
+            throw SecurityException("KeyStore 未初始化")
+        }
+
+        // 验证私钥格式
+        if (!keyStore!!.isValidPrivateKey(privateKeyHex)) {
+            throw SecurityException("私钥格式错误，必须是 64 位 16 进制字符串")
+        }
+
+        try {
+            // 从私钥创建密钥对验证格式
+            val keyPair = KeyPair(privateKeyHex)
+            val address = keyPair.toBase58CheckAddress()
+
+            // 创建钱包数据
+            val walletData = keyStore!!.createWallet(name, privateKeyHex, address)
+
+            // 如果这是第一个钱包，设置为当前钱包
+            if (getCurrentWallet() == null) {
+                setCurrentWallet(walletData.id)
+            }
+
+            return walletData
+
+        } catch (e: Exception) {
+            throw SecurityException("导入钱包失败：${e.message}", e)
+        }
+    }
+
+    /**
+     * 导入观察钱包（多钱包版本）
+     *
+     * @param name 钱包名称
+     * @param address 钱包地址
+     * @return 创建的钱包数据
+     */
+    @Throws(SecurityException::class)
+    fun importWatchWallet(name: String, address: String): WalletData {
+        if (keyStore == null) {
+            throw SecurityException("KeyStore 未初始化")
+        }
+
+        // 验证地址格式
+        if (!isValidAddress(address)) {
+            throw SecurityException("地址格式错误")
+        }
+
+        try {
+            // 创建观察钱包数据
+            val walletData = keyStore!!.importWatchWallet(name, address)
+
+            // 如果这是第一个钱包，设置为当前钱包
+            if (getCurrentWallet() == null) {
+                setCurrentWallet(walletData.id)
+            }
+
+            return walletData
+
+        } catch (e: Exception) {
+            throw SecurityException("导入观察钱包失败：${e.message}", e)
+        }
+    }
+
+    /**
+     * 更新钱包信息
+     *
+     * @param walletId 钱包ID
+     * @param newName 新钱包名称（可选）
+     * @param newAddress 新钱包地址（仅适用于观察钱包）
+     * @return 更新后的钱包数据
+     * @throws SecurityException 更新失败时抛出
+     */
+    @Throws(SecurityException::class)
+    fun updateWallet(walletId: String, newName: String? = null, newAddress: String? = null): WalletData {
+        if (keyStore == null) {
+            throw SecurityException("KeyStore 未初始化")
+        }
+
+        try {
+            // 获取现有钱包数据
+            val existingWallet = keyStore!!.getWalletById(walletId)
+                ?: throw SecurityException("钱包不存在")
+
+            // 验证参数
+            if (newName != null && newName.trim().isEmpty()) {
+                throw SecurityException("钱包名称不能为空")
+            }
+
+            if (newAddress != null) {
+                // 只有观察钱包才能修改地址
+                if (existingWallet.type != WalletType.WATCH_ONLY) {
+                    throw SecurityException("只能修改观察钱包的地址")
+                }
+
+                // 验证新地址格式
+                if (!isValidAddress(newAddress)) {
+                    throw SecurityException("新地址格式错误")
+                }
+            }
+
+            // 更新钱包信息
+            val updatedWallet = keyStore!!.updateWallet(walletId, newName, newAddress)
+
+            // 如果更新的钱包是当前钱包，重新加载
+            if (currentWallet?.id == walletId) {
+                loadCurrentWallet()
+            }
+
+            return updatedWallet
+
+        } catch (e: SecurityException) {
+            throw e
+        } catch (e: Exception) {
+            throw SecurityException("更新钱包失败：${e.message}", e)
+        }
     }
     
     /**
@@ -398,13 +619,12 @@ class WalletManager(private val context: Context? = null) {
     /**
      * 签名消息
      * 硬性约束：禁止签名任意消息
-     * 
+     *
      * @deprecated 此方法已被禁用，始终抛出异常
      * @throws SecurityException 始终抛出
      */
     @Deprecated("禁止签名任意消息", level = DeprecationLevel.ERROR)
     fun signMessage(message: String): ByteArray {
-        throw SecurityException("禁止签名任意消息")
+        throw SecurityException("禁止签名任意消息，消息内容：${message.take(50)}...")
     }
 }
-

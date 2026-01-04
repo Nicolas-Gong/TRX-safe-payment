@@ -123,7 +123,7 @@
     <string name="risk_confirm_cancel">取消</string>
     
     <!-- 转账确认对话框 -->
-    <string name="confirm_title">确认转账</string>
+    <string name="confirm_transfer_title_dialog">确认转账</string>
     <string name="confirm_transaction_type">交易类型</string>
     <string name="confirm_transaction_type_trx">TRX 普通转账</string>
     <string name="confirm_recipient_address">收款地址</string>
@@ -143,6 +143,20 @@
     <string name="confirm_wait_prompt">请等待 %s 秒后再确认</string>
     <string name="confirm_hold_insufficient">长按时间不足，还需 %s 秒</string>
     <string name="confirm_success">确认成功</string>
+
+    <!-- 带宽和资源消耗 -->
+    <string name="confirm_resource_info">资源消耗</string>
+    <string name="confirm_available_bandwidth">可用带宽：%s</string>
+    <string name="confirm_required_bandwidth">需要带宽：%s</string>
+    <string name="confirm_bandwidth_sufficient">✓ 带宽充足，无需燃烧TRX</string>
+    <string name="confirm_bandwidth_insufficient">带宽不足，需要燃烧 %s TRX</string>
+    <string name="confirm_burn_for_bandwidth">带宽燃烧</string>
+    <string name="confirm_total_cost">总支出（包含燃烧）</string>
+    <string name="confirm_burn_amount">%s TRX</string>
+    <string name="confirm_account_balance">账户余额: %s TRX</string>
+    <string name="confirm_resource_loading">正在查询账户资源…</string>
+    <string name="confirm_resource_error">无法获取资源信息</string>
+    <string name="confirm_bandwidth_unit">点</string>
     
     <!-- UI 补充 -->
     <string name="welcome_title">欢迎使用 TRX 安全支付</string>
@@ -161,6 +175,46 @@
     <string name="watch_only_restriction">观察钱包无法直接转账，请生成二维码使用冷钱包签名。</string>
     <string name="hint_watch_address">请输入观察钱包地址</string>
     <string name="wallet_status_label">当前状态：</string>
+
+    <!-- 签名确认对话框 -->
+    <string name="sign_title">签名交易</string>
+    <string name="sign_transaction_id">交易ID: %s</string>
+    <string name="sign_amount_format">%s TRX</string>
+    <string name="sign_amount_with_burn_format">%1$s TRX + 燃烧费 %2$s TRX = 共 %3$s TRX</string>
+    <string name="sign_fee_format">%s TRX</string>
+    <string name="sign_fee_burn_format">燃烧费: %s TRX</string>
+    <string name="sign_fee_unknown">未知</string>
+    <string name="sign_ready">准备签名</string>
+    <string name="sign_wait_prompt">请等待 %s 秒后重试</string>
+    <string name="sign_confirm_button">确认签名</string>
+    <string name="sign_status_icon">签名状态</string>
+    <string name="sign_transaction_info">交易详情</string>
+    <string name="sign_tx_id">交易ID</string>
+    <string name="sign_recipient">收款地址</string>
+    <string name="sign_amount_label">转账金额</string>
+    <string name="sign_fee_label">预估手续费</string>
+    <string name="sign_security_warning">⚠️ 签名交易前，请仔细核对交易信息。一旦签名完成，交易将不可撤销。</string>
+    <string name="signing_in_progress">签名中...</string>
+    <string name="signing_validate">正在验证交易...</string>
+    <string name="signing_generating">正在生成签名...</string>
+    <string name="sign_complete">✓ 签名成功</string>
+    <string name="sign_security_error">✗ 安全检查失败</string>
+    <string name="sign_failed">✗ 签名失败: %s</string>
+    <string name="sign_error_unknown">签名失败</string>
+    <string name="sign_timeout">✗ 签名超时</string>
+    <string name="sign_timeout_message">签名过程超时，请重试</string>
+    <string name="sign_transaction_error">无法解析交易</string>
+    <string name="sign_amount_error">无法解析金额</string>
+    <string name="sign_fee_error">无法计算手续费</string>
+    
+    <!-- 生物识别验证 -->
+    <string name="biometric_title">身份验证</string>
+    <string name="biometric_subtitle">请使用指纹或面部识别确认交易</string>
+    <string name="biometric_prompt">等待生物识别验证...</string>
+    <string name="biometric_not_available">当前设备不支持生物识别</string>
+    <string name="biometric_canceled">已取消</string>
+    <string name="biometric_failed">验证失败，请重试</string>
+    <string name="biometric_error">验证错误：%s</string>
 </resources>
 
 

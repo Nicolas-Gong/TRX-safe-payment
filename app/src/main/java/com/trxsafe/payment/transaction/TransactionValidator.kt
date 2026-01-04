@@ -148,14 +148,14 @@ class TransactionValidator {
         
         // 硬性约束：不包含 data 字段
         // RawData 中不应该有 data 字段
-        if (rawData.hasData() && rawData.data.size() > 0) {
+        if (!rawData.data.isEmpty) {
             throw TransactionValidationException(
                 "交易包含 data 字段，已拒绝"
             )
         }
         
         // 检查是否有脚本字段
-        if (rawData.hasScripts() && rawData.scripts.isNotEmpty()) {
+        if (!rawData.scripts.isEmpty) {
             throw TransactionValidationException(
                 "交易包含 scripts 字段，已拒绝"
             )
