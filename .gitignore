@@ -7,8 +7,12 @@ gradlew.bat
 wrapper/dists/
 gradle-8.13/
 caches/
-demon/
+daemon/
 native/
+gradle.properties
+gradle.zip
+gradle/wrapper/gradle-wrapper.jar
+kotlin-profile/
 
 # Android Studio
 .idea/
